@@ -14,7 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class RegexWebFilterPlugin(HttpProxyBasePlugin):
-    keyword_pattern = b"(\s+(?:[Ss][Ee][Ll][Ee][Cc][Tt]|[Uu][Pp][Dd][Aa][Tt][Ee]|[Dd][Ee][Ll][Ee][Tt][Ee]|[Ii][Nn][Ss][Ee][Rr][Tt]|[Pp][Rr][Oo][Cc][Ee][Dd][Uu][Rr][Ee]|[Cc][Rr][Ee][Aa][Tt][Ee]|[Aa][Ll][Tt][Ee][Rr]|[Aa][Nn][Aa][Ll][Yy][Zz][Ee]|[Cc][Aa][Ll][Ll]|[Cc][Oo][Mm][Mm][Ii][Tt]|[Dd][Rr][Oo][Pp]|[Gg][Rr][Aa][Nn][Tt]|[Pp][Uu][Rr][Gg][Ee]|[Rr][Ee][Vv][Oo][Kk][Ee]|[Ee]][Xx][Ee][Cc][Uu][Tt][E|[Uu][Nn][Ii][Oo][Nn]|[Ee][Xx][Ee][Cc]|[Ee][Xx][Ee][Cc]\s[Ss][Pp]|[Ee][Xx][Ee][Cc]\s[Xx][Pp]|[Oo][Rr]|[Aa][Nn][Dd]|[Ll][Ii][Kk][Ee])\s+|\s+(?:[Jj][Aa][Vv][Aa][Ss][Cc][Rr][Ii][Pp][Tt]|[Ss][Cc][Rr][Ii][Pp][Tt])\s+)"
+    #keyword_pattern = b"(\++(?:[Ss][Ee][Ll][Ee][Cc][Tt]|[Uu][Pp][Dd][Aa][Tt][Ee]|[Dd][Ee][Ll][Ee][Tt][Ee]|[Ii][Nn][Ss][Ee][Rr][Tt]|[Pp][Rr][Oo][Cc][Ee][Dd][Uu][Rr][Ee]|[Cc][Rr][Ee][Aa][Tt][Ee]|[Aa][Ll][Tt][Ee][Rr]|[Aa][Nn][Aa][Ll][Yy][Zz][Ee]|[Cc][Aa][Ll][Ll]|[Cc][Oo][Mm][Mm][Ii][Tt]|[Dd][Rr][Oo][Pp]|[Gg][Rr][Aa][Nn][Tt]|[Pp][Uu][Rr][Gg][Ee]|[Rr][Ee][Vv][Oo][Kk][Ee]|[Ee]][Xx][Ee][Cc][Uu][Tt][E|[Uu][Nn][Ii][Oo][Nn]|[Ee][Xx][Ee][Cc]|[Ee][Xx][Ee][Cc]\+[Ss][Pp]|[Ee][Xx][Ee][Cc]\+[Xx][Pp]|[Oo][Rr]|[Aa][Nn][Dd]|[Ll][Ii][Kk][Ee])\++|\++(?:[Jj][Aa][Vv][Aa][Ss][Cc][Rr][Ii][Pp][Tt]|[Ss][Cc][Rr][Ii][Pp][Tt])\++)"
+    
+    keyword_pattern = b"(\+(?:[Ss][Ee][Ll][Ee][Cc][Tt]|[Uu][Pp][Dd][Aa][Tt][Ee]|[Dd][Ee][Ll][Ee][Tt][Ee]|[Ii][Nn][Ss][Ee][Rr][Tt]|[Pp][Rr][Oo][Cc][Ee][Dd][Uu][Rr][Ee]|[Cc][Rr][Ee][Aa][Tt][Ee]|[Aa][Ll][Tt][Ee][Rr]|[Aa][Nn][Aa][Ll][Yy][Zz][Ee]|[Cc][Aa][Ll][Ll]|[Cc][Oo][Mm][Mm][Ii][Tt]|[Dd][Rr][Oo][Pp]|[Gg][Rr][Aa][Nn][Tt]|[Pp][Uu][Rr][Gg][Ee]|[Rr][Ee][Vv][Oo][Kk][Ee]|[Ee]][Xx][Ee][Cc][Uu][Tt][E|[Uu][Nn][Ii][Oo][Nn]|[Ee][Xx][Ee][Cc]|[Ee][Xx][Ee][Cc]\[Ss][Pp]|[Ee][Xx][Ee][Cc]\[Xx][Pp]|[Oo][Rr]|[Aa][Nn][Dd]|[Ll][Ii][Kk][Ee])\+|\+(?:[Jj][Aa][Vv][Aa][Ss][Cc][Rr][Ii][Pp][Tt]|[Ss][Cc][Rr][Ii][Pp][Tt])\+)"
     user_agent_pattern = b'(^[a-zA-Z]+/[\d.]+ [a-zA-Z0-9 .\-:_/\[\]\(\),;\+]*$)'
     cookie_pattern = b"^[a-zA-Z0-9/\+=._\-%]+$"
     # secure_text_pattern = b"^(|[a-zA-Z0-9._!?,*;/\- ]+)$" #Should add * ; 
@@ -61,22 +63,30 @@ class RegexWebFilterPlugin(HttpProxyBasePlugin):
 
         #Cookies - Cookies
         ruleNumber += 1
-        hvalue = request.headers[b'cookie'][1]
-        cookiesList = hvalue.split(b';')
-        for cookie in cookiesList:
-            cookie = cookie.lstrip()
-            m = re.findall(self.cookie_pattern, cookie)
-            if(len(m) != 1 or len(m[0]) != len(cookie)):
-                self.reject_request(f"Rule {ruleNumber}: Cookie Pattern Violated")
+        if (b'cookie' in request.headers.keys()):
+            hvalue = request.headers[b'cookie'][1]
+            cookiesList = hvalue.split(b';')
+            for cookie in cookiesList:
+                cookie = cookie.lstrip()
+                m = re.findall(self.cookie_pattern, cookie)
+                if(len(m) != 1 or len(m[0]) != len(cookie)):
+                    self.reject_request(f"Rule {ruleNumber}: Cookie Pattern Violated")
 
 
         #Body - Keyword
         ruleNumber += 1
-        if(request.headers[b'content-type'][1] == b'text/plain'):
+        if(b'content-type' in request.headers.keys() and request.headers[b'content-type'][1] == b'text/plain'):
             m = re.findall(self.keyword_pattern, request.body)
             if(m):
-                self.reject_request(f"Rule {ruleNumber}: Keyword Pattern Detected")
+                self.reject_request(f"Rule {ruleNumber}:  Keyword Pattern Detected")
 
+        ruleNumber+=1
+        #Path - Keyword
+        print(self.keyword_pattern)
+        m = re.findall(self.keyword_pattern, request.path)
+        if(m):
+            print(m)
+            self.reject_request(f"Rule {ruleNumber}:  Keyword Pattern Detected")
 
         # #Body - ST
         # ruleNumber += 1
